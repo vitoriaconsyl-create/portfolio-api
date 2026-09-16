@@ -1,14 +1,15 @@
 const express = require("express");
 const pool = require("../database");
+const criarTechnologyDto = require("../dtos/technologyDto");const criarTechnologyDto = require("../dtos/technologyDto");
 
 const router = express.Router();
 
 // POST /api/technologies
 router.post("/", async (req, res, next) => {
     try {
-        const { nome } = req.body;
+        const { nome } = criarTechnologyDto(req.body);
 
-        if (!nome || !nome.trim()) {
+        if (!nome) {
             const erro = new Error("O nome da tecnologia é obrigatório");
             erro.status = 400;
             return next(erro);
@@ -20,7 +21,7 @@ router.post("/", async (req, res, next) => {
             VALUES ($1)
             RETURNING id, nome
             `,
-            [nome.trim()]
+            [nome]
         );
 
         res.status(201).json(result.rows[0]);

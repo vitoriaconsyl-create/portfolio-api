@@ -1,20 +1,21 @@
 const express = require("express");
 const pool = require("../database");
+const criarProfileDto = require("../dtos/profileDto");
 
 const router = express.Router();
 
 // POST /api/profiles
 router.post("/", async (req, res, next) => {
     try {
-        const { nome, email, bio } = req.body;
+        const { nome, email, bio } = criarProfileDto(req.body);
 
-        if (!nome || !nome.trim()) {
+        if (!nome) {
             const erro = new Error("O nome é obrigatório");
             erro.status = 400;
             return next(erro);
         }
 
-        if (!email || !email.trim()) {
+        if (!email) {
             const erro = new Error("O e-mail é obrigatório");
             erro.status = 400;
             return next(erro);
@@ -26,7 +27,7 @@ router.post("/", async (req, res, next) => {
             VALUES ($1, $2, $3)
             RETURNING id, nome, email, bio
             `,
-            [nome.trim(), email.trim(), bio || null]
+            [nome, email, bio]
         );
 
         res.status(201).json(result.rows[0]);
