@@ -10,6 +10,87 @@ const criarErro = (mensagem, status) => {
 
 const router = express.Router();
 
+// POST /api/projects
+router.post("/", async (req, res, next) => {
+    try {
+        const { nome, tecnologia, profile_id, tecnologias = [] } = req.body;
+
+        if (!nome || !nome.trim()) {
+            return next(criarErro("O nome do projeto é obrigatório", 400));
+        }
+
+        if (!tecnologia || !tecnologia.trim()) {
+            return next(criarErro("A tecnologia é obrigatória", 400));
+        }
+
+        if (!profile_id) {
+            return next(criarErro("O perfil é obrigatório", 400));
+        }
+
+        if (!Array.isArray(tecnologias)) {
+            return next(criarErro("Tecnologias deve ser uma lista", 400));
+        }
+
+        const profileResult = await pool.query(
+            "SELECT id FROM profiles WHERE id = $1",
+            [profile_id]
+        );
+
+        if (profileResult.rows.length === 0) {
+            return next(criarErro("Perfil não encontrado", 404));
+        }
+
+        if (tecnologias.length > 0) {
+            const technologyResult = await pool.query(
+                `
+                SELECT id
+                FROM technologies
+                WHERE id = ANY($1)
+                `,
+                [tecnologias]
+            );
+
+            if (technologyResult.rows.length !== tecnologias.length) {
+                return next(criarErro("Uma ou mais tecnologias não foram encontradas", 404));
+            }
+        }
+
+        const projectResult = await pool.query(
+            `
+            INSERT INTO projects
+                (nome, tecnologia, profile_id, curtidas, media_avaliacao)
+            VALUES
+                ($1, $2, $3, 0, 0)
+            RETURNING
+                id, nome, tecnologia, profile_id, curtidas, media_avaliacao
+            `,
+            [nome.trim(), tecnologia.trim(), profile_id]
+        );
+
+        const projetoId = projectResult.rows[0].id;
+
+        for (const tecnologiaId of tecnologias) {
+            await pool.query(
+                `
+                INSERT INTO project_technologies
+                    (projeto_id, tecnologia_id)
+                VALUES
+                    ($1, $2)
+                `,
+                [projetoId, tecnologiaId]
+            );
+        }
+
+        res.status(201).json({
+            ...projectResult.rows[0],
+            tecnologias
+        });
+
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Pesquisar
 router.get("/", async (req, res, next) => {
     try {
@@ -27,18 +108,39 @@ router.get("/", async (req, res, next) => {
         const offset = (pageNumber - 1) * limitNumber;
 
         let query = `
-            SELECT id, nome, tecnologia, curtidas, media_avaliacao::float AS media_avaliacao
-            FROM projects
-        `;
+    SELECT
+        p.id,
+        p.nome,
+        p.tecnologia,
+        p.profile_id,
+        p.curtidas,
+        p.media_avaliacao::float AS media_avaliacao,
+
+        (
+            SELECT json_agg(
+                json_build_object(
+                    'id', t.id,
+                    'nome', t.nome
+                )
+                ORDER BY t.id
+            )
+            FROM project_technologies pt
+            JOIN technologies t
+                ON t.id = pt.tecnologia_id
+            WHERE pt.projeto_id = p.id
+        ) AS tecnologias
+
+    FROM projects p
+`;
 
         const values = [];
 
         if (technology) {
-            query += ` WHERE LOWER(tecnologia) = LOWER($1)`;
+            query += ` WHERE LOWER(p.tecnologia) = LOWER($1)`;
             values.push(technology);
         }
 
-        query += ` ORDER BY id LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+        query += ` ORDER BY p.id LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
 
         values.push(limitNumber, offset);
 
@@ -46,13 +148,13 @@ router.get("/", async (req, res, next) => {
 
         let countQuery = `
             SELECT COUNT(*) 
-            FROM projects
+            FROM projects p
         `;
 
         const countValues = [];
 
         if (technology) {
-            countQuery += ` WHERE LOWER(tecnologia) = LOWER($1)`;
+            countQuery += ` WHERE LOWER(p.tecnologia) = LOWER($1)`;
             countValues.push(technology);
         }
 
