@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../database");
+const criarProjectDto = require("../dtos/projectDto");
 
 const criarErro = (mensagem, status) => {
     const erro = new Error(mensagem);
@@ -13,13 +14,13 @@ const router = express.Router();
 // POST /api/projects
 router.post("/", async (req, res, next) => {
     try {
-        const { nome, tecnologia, profile_id, tecnologias = [] } = req.body;
+        const { nome, tecnologia, profile_id, tecnologias } = criarProjectDto(req.body);
 
-        if (!nome || !nome.trim()) {
+        if (!nome) {
             return next(criarErro("O nome do projeto é obrigatório", 400));
         }
 
-        if (!tecnologia || !tecnologia.trim()) {
+        if (!tecnologia) {
             return next(criarErro("A tecnologia é obrigatória", 400));
         }
 
