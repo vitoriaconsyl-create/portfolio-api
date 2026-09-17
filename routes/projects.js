@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../database");
 const criarProjectDto = require("../dtos/projectDto");
+const criarProjectResponseDto = require("../dtos/projectResponseDto");
 
 const criarErro = (mensagem, status) => {
     const erro = new Error(mensagem);
@@ -82,10 +83,12 @@ router.post("/", async (req, res, next) => {
             );
         }
 
-        res.status(201).json({
-            ...projectResult.rows[0],
-            tecnologias
-        });
+        res.status(201).json(
+            criarProjectResponseDto({
+                ...projectResult.rows[0],
+                tecnologias
+            })
+        );
 
     } catch (error) {
         next(error);
@@ -167,7 +170,7 @@ router.get("/", async (req, res, next) => {
             page: pageNumber,
             limit: limitNumber,
             total: total,
-            projects: result.rows
+            projects: result.rows.map(criarProjectResponseDto)
         });
 
     } catch (error) {

@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../database");
-const criarTechnologyDto = require("../dtos/technologyDto");const criarTechnologyDto = require("../dtos/technologyDto");
+const criarTechnologyDto = require("../dtos/technologyDto");
+const criarTechnologyResponseDto = require("../dtos/technologyResponseDto");
 
 const router = express.Router();
 
@@ -24,7 +25,9 @@ router.post("/", async (req, res, next) => {
             [nome]
         );
 
-        res.status(201).json(result.rows[0]);
+        res.status(201).json(
+            criarTechnologyResponseDto(result.rows[0])
+        );
 
     } catch (error) {
         next(error);
@@ -42,7 +45,9 @@ router.get("/", async (req, res, next) => {
             `
         );
 
-        res.status(200).json(result.rows);
+        res.status(200).json(
+            result.rows.map(criarTechnologyResponseDto)
+        );
 
     } catch (error) {
         next(error);

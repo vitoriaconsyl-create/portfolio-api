@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../database");
 const criarProfileDto = require("../dtos/profileDto");
+const criarProfileResponseDto = require("../dtos/profileResponseDto");
 
 const router = express.Router();
 
@@ -30,7 +31,9 @@ router.post("/", async (req, res, next) => {
             [nome, email, bio]
         );
 
-        res.status(201).json(result.rows[0]);
+        res.status(201).json(
+            criarProfileResponseDto(result.rows[0])
+        );
 
     } catch (error) {
         next(error);
@@ -63,8 +66,9 @@ router.get("/:id", async (req, res, next) => {
             return next(erro);
         }
 
-        res.status(200).json(result.rows[0]);
-
+        res.status(200).json(
+            criarProfileResponseDto(result.rows[0])
+        );
     } catch (error) {
         next(error);
     }
