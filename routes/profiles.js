@@ -1,5 +1,5 @@
 const express = require("express");
-const pool = require("../database");
+const profileRepository = require("../repositories/profileRepository");
 const criarProfileDto = require("../dtos/profileDto");
 const criarProfileResponseDto = require("../dtos/profileResponseDto");
 
@@ -22,17 +22,14 @@ router.post("/", async (req, res, next) => {
             return next(erro);
         }
 
-        const result = await pool.query(
-            `
-            INSERT INTO profiles (nome, email, bio)
-            VALUES ($1, $2, $3)
-            RETURNING id, nome, email, bio
-            `,
-            [nome, email, bio]
+        const perfil = await profileRepository.criar(
+            nome,
+            email,
+            bio
         );
 
         res.status(201).json(
-            criarProfileResponseDto(result.rows[0])
+            criarProfileResponseDto(perfil)
         );
 
     } catch (error) {
@@ -51,23 +48,16 @@ router.get("/:id", async (req, res, next) => {
             return next(erro);
         }
 
-        const result = await pool.query(
-            `
-            SELECT id, nome, email, bio
-            FROM profiles
-            WHERE id = $1
-            `,
-            [id]
-        );
+        const perfil = await profileRepository.buscarPorId(id);
 
-        if (result.rows.length === 0) {
+        if (!perfil) {
             const erro = new Error("Perfil não encontrado");
             erro.status = 404;
             return next(erro);
         }
 
         res.status(200).json(
-            criarProfileResponseDto(result.rows[0])
+            criarProfileResponseDto(perfil)
         );
     } catch (error) {
         next(error);

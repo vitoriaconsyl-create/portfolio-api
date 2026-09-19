@@ -7,11 +7,181 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000"
+      "url": "http://localhost:3000",
+      "description": "Servidor local"
+    },
+    {
+      "url": "https://portfolio-api-8e9q.onrender.com",
+      "description": "Servidor publicado no Render"
     }
   ],
   "paths": {
+
+    "/api/profiles": {
+      "post": {
+        "summary": "Cria um perfil",
+        "description": "Cadastra um novo perfil.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nome",
+                  "email"
+                ],
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "example": "Vitória Silva"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "vitoria@email.com"
+                  },
+                  "bio": {
+                    "type": "string",
+                    "example": "Desenvolvedora de sistemas."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Perfil criado com sucesso."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          }
+        }
+      }
+    },
+
+    "/api/profiles/{id}": {
+      "get": {
+        "summary": "Busca um perfil",
+        "description": "Retorna um perfil pelo ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do perfil.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil encontrado."
+          },
+          "400": {
+            "description": "ID inválido."
+          },
+          "404": {
+            "description": "Perfil não encontrado."
+          }
+        }
+      }
+    },
+
+    "/api/technologies": {
+      "post": {
+        "summary": "Cria uma tecnologia",
+        "description": "Cadastra uma nova tecnologia.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nome"
+                ],
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "example": "JavaScript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tecnologia criada com sucesso."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          }
+        }
+      },
+
+      "get": {
+        "summary": "Lista as tecnologias",
+        "description": "Retorna todas as tecnologias cadastradas.",
+        "responses": {
+          "200": {
+            "description": "Lista de tecnologias retornada com sucesso."
+          }
+        }
+      }
+    },
+
     "/api/projects": {
+      "post": {
+        "summary": "Cria um projeto",
+        "description": "Cadastra um projeto associado a um perfil e a tecnologias.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nome",
+                  "profile_id",
+                  "tecnologias"
+                ],
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "example": "Meu Projeto Backend"
+                  },
+                  "profile_id": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "tecnologias": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [1, 2]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Projeto criado com sucesso."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          },
+          "404": {
+            "description": "Perfil ou tecnologia não encontrada."
+          }
+        }
+      },
+
       "get": {
         "summary": "Lista os projetos",
         "description": "Retorna os projetos cadastrados, permitindo filtro por tecnologia e paginação.",
@@ -32,6 +202,7 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "default": 1
             }
           },
@@ -42,6 +213,7 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "default": 10
             }
           }
@@ -49,6 +221,9 @@
         "responses": {
           "200": {
             "description": "Lista de projetos retornada com sucesso."
+          },
+          "400": {
+            "description": "Parâmetros inválidos."
           }
         }
       }
@@ -57,7 +232,7 @@
     "/api/projects/{id}/feedbacks": {
       "post": {
         "summary": "Adiciona um feedback ao projeto",
-        "description": "Permite registrar a nota e o comentário do professor sobre o projeto.",
+        "description": "Permite registrar uma nota e um comentário para o projeto.",
         "parameters": [
           {
             "name": "id",
@@ -76,17 +251,17 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "rating",
-                  "comment"
+                  "nota",
+                  "comentario"
                 ],
                 "properties": {
-                  "rating": {
+                  "nota": {
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 5,
                     "example": 5
                   },
-                  "comment": {
+                  "comentario": {
                     "type": "string",
                     "example": "Projeto bem estruturado e organizado."
                   }
@@ -112,7 +287,7 @@
     "/api/projects/{id}/upvote": {
       "put": {
         "summary": "Adiciona um upvote ao projeto",
-        "description": "Incrementa a quantidade de curtidas ou estrelas do projeto.",
+        "description": "Incrementa a quantidade de curtidas do projeto.",
         "parameters": [
           {
             "name": "id",
@@ -127,6 +302,9 @@
         "responses": {
           "200": {
             "description": "Upvote registrado com sucesso."
+          },
+          "400": {
+            "description": "ID inválido."
           },
           "404": {
             "description": "Projeto não encontrado."

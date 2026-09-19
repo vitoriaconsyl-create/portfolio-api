@@ -1,5 +1,5 @@
 const express = require("express");
-const pool = require("../database");
+const technologyRepository = require("../repositories/technologyRepository");
 const criarTechnologyDto = require("../dtos/technologyDto");
 const criarTechnologyResponseDto = require("../dtos/technologyResponseDto");
 
@@ -16,17 +16,10 @@ router.post("/", async (req, res, next) => {
             return next(erro);
         }
 
-        const result = await pool.query(
-            `
-            INSERT INTO technologies (nome)
-            VALUES ($1)
-            RETURNING id, nome
-            `,
-            [nome]
-        );
+        const technology = await technologyRepository.criar(nome);
 
         res.status(201).json(
-            criarTechnologyResponseDto(result.rows[0])
+            criarTechnologyResponseDto(technology)
         );
 
     } catch (error) {
@@ -37,16 +30,10 @@ router.post("/", async (req, res, next) => {
 // GET /api/technologies
 router.get("/", async (req, res, next) => {
     try {
-        const result = await pool.query(
-            `
-            SELECT id, nome
-            FROM technologies
-            ORDER BY id
-            `
-        );
+        const technologies = await technologyRepository.listar();
 
         res.status(200).json(
-            result.rows.map(criarTechnologyResponseDto)
+            technologies.map(criarTechnologyResponseDto)
         );
 
     } catch (error) {
