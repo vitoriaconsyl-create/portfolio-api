@@ -26,13 +26,16 @@ async function buscarPorId(id) {
     const result = await pool.query(
         `
         SELECT
-            id,
-            nome,
-            profile_id,
-            curtidas,
-            media_avaliacao::float AS media_avaliacao
-        FROM projects
-        WHERE id = $1
+            p.id,
+            p.nome,
+            p.profile_id,
+            p.curtidas,
+            p.media_avaliacao::float AS media_avaliacao,
+            pr.nome AS profile_nome
+        FROM projects p
+        JOIN profiles pr
+            ON pr.id = p.profile_id
+        WHERE p.id = $1
         `,
         [id]
     );
@@ -49,6 +52,7 @@ async function listar(technology, pageNumber, limitNumber) {
             p.id,
             p.nome,
             p.profile_id,
+            pr.nome AS profile_nome,
             p.curtidas,
             p.media_avaliacao::float AS media_avaliacao,
 
@@ -66,7 +70,9 @@ async function listar(technology, pageNumber, limitNumber) {
                 WHERE pt.projeto_id = p.id
             ) AS tecnologias
 
-        FROM projects p
+        FROM projects p 
+        JOIN profiles pr
+            ON pr.id = p.profile_id
     `;
 
     const values = [];
@@ -262,7 +268,11 @@ async function adicionarUpvote(id) {
         [id]
     );
 
-    return result.rows[0];
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    return buscarPorId(id);
 }
 
 module.exports = {

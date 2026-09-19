@@ -70,12 +70,15 @@ router.post("/", async (req, res, next) => {
             tecnologias
         );
 
+        const projetoCompleto =
+            await projectRepository.buscarPorId(projeto.id);
+
         const tecnologiasCadastradas =
             await projectRepository.buscarTecnologias(projeto.id);
 
         res.status(201).json(
             criarProjectResponseDto({
-                ...projeto,
+                ...projetoCompleto,
                 tecnologias: tecnologiasCadastradas
             })
         );
@@ -128,6 +131,41 @@ router.get("/", async (req, res, next) => {
         next(error);
     }
 });
+
+// GET /api/projects/:id
+router.get("/:id", async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id)) {
+            return next(
+                criarErro("ID do projeto inválido", 400)
+            );
+        }
+
+        const projeto = await projectRepository.buscarPorId(id);
+
+        if (!projeto) {
+            return next(
+                criarErro("Projeto não encontrado", 404)
+            );
+        }
+
+        const tecnologias =
+            await projectRepository.buscarTecnologias(id);
+
+        res.status(200).json(
+            criarProjectResponseDto({
+                ...projeto,
+                tecnologias
+            })
+        );
+
+    } catch (error) {
+        next(error);
+    }
+});
+
 // POST feedback
 router.post("/:id/feedbacks", async (req, res, next) => {
     try {
@@ -207,9 +245,15 @@ router.put("/:id/upvote", async (req, res, next) => {
             );
         }
 
+        const tecnologias =
+            await projectRepository.buscarTecnologias(id);
+
         res.status(200).json({
             mensagem: "Upvote registrado com sucesso",
-            projeto: projeto
+            projeto: criarProjectResponseDto({
+                ...projeto,
+                tecnologias
+            })
         });
 
     } catch (error) {
